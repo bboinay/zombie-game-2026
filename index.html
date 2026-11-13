@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- The page left at the game's old address, bboinay.github.io/zombie-game-2026/, published from a small public repo of that
+     name that holds only this file. Saves live in each browser under the address they were made at, so only a page here can
+     read them: it sends them to the new address in the link, after a # so no server sees them, and the game asks before
+     taking them in (importFromLink in src/game/save-file.js). Not part of the game's own build. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zombie Game has moved</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://happybunny.games/zombie-game/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&display=swap">
+<style>
+  :root { --black: #15110e; --paper: #eadfc3; --paper-dark: #d3c49f; --yellow: #f9c63b; --red: #c61f1b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--black); color: var(--paper); font: 15px/1.5 ui-monospace, "Roboto Mono", Menlo, monospace; }
+  main { max-width: 520px; display: grid; gap: 18px; }
+  h1 { margin: 0; font: 64px/0.95 Bangers, Impact, sans-serif; letter-spacing: 2px; color: var(--yellow); text-shadow: 3px 3px 0 var(--red); }
+  p { margin: 0; }
+  a { color: var(--yellow); }
+  .btn { display: block; width: 100%; padding: 14px 18px; border: 3px solid var(--black); box-shadow: 4px 4px 0 var(--red); background: var(--yellow); color: var(--black); font: inherit; font-weight: 700; font-size: 17px; letter-spacing: 2px; text-transform: uppercase; text-align: center; text-decoration: none; cursor: pointer; }
+  .btn.plain { background: var(--paper); box-shadow: 4px 4px 0 var(--paper-dark); font-size: 14px; }
+  small { color: var(--paper-dark); opacity: .8; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Zombie Game has moved</h1>
+  <p>It's free to play at its new home, <a href="https://happybunny.games/zombie-game/">happybunny.games/zombie-game</a>.</p>
+  <div id="withSaves" class="hidden">
+    <p style="margin-bottom:14px">Your saves from this address were found in this browser. Take them with you:</p>
+    <button id="bring" class="btn">Bring my saves</button>
+    <p style="margin-top:12px"><small>Or <a href="#" id="download">download them as a save file</a>, to load later with Character settings &rarr; Import save.</small></p>
+  </div>
+  <div id="noSaves">
+    <a class="btn" href="https://happybunny.games/zombie-game/">Play at the new address</a>
+  </div>
+  <small>&copy; 2026 Happy Bunny Games. All rights reserved.</small>
+</main>
+<script>
+  'use strict';
+  const NEW = 'https://happybunny.games/zombie-game/';
+  const PREFIX = 'zombie-game-2026.', SKIP = ['zombie-game-2026.playlog.v1', 'zombie-game-2026.perf'];
+
+  function saveFile() {
+    const data = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(PREFIX) && !SKIP.includes(k)) data[k] = localStorage.getItem(k);
+      }
+    } catch (e) { /* storage blocked: nothing to bring */ }
+    return Object.keys(data).length ? { format: 'zombie-game-2026.savefile', version: 1, exported: new Date().toISOString(), data } : null;
+  }
+
+  async function packed(file) {
+    const gz = await new Response(new Blob([JSON.stringify(file)]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
+    let s = '';
+    for (const b of new Uint8Array(gz)) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  const file = saveFile();
+  if (file) {
+    document.getElementById('withSaves').classList.remove('hidden');
+    document.getElementById('noSaves').classList.add('hidden');
+    document.getElementById('bring').onclick = async () => { location.href = NEW + '#import=' + await packed(file); };
+    document.getElementById('download').onclick = e => {
+      e.preventDefault();
+      const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' })), a = document.createElement('a');
+      a.href = url; a.download = `zombie-game-save-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+  }
+</script>
+</body>
+</html>
